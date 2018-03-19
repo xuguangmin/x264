@@ -184,7 +184,7 @@ typedef struct x264_frame
 /* synchronized frame list */
 typedef struct
 {
-   x264_frame_t **list;
+   x264_frame_t **list;	/* 同步帧列表 */
    int i_max_size;	/* 同步帧列表中最大帧数 */
    int i_size;		/* 同步帧列表中帧的数目 */
    x264_pthread_mutex_t     mutex;

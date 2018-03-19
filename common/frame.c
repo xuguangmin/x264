@@ -733,6 +733,7 @@ int x264_frame_new_slice( x264_t *h, x264_frame_t *frame )
 
 /* list operators */
 
+/* 将帧 frame 添加到栈 list 中 */
 void x264_frame_push( x264_frame_t **list, x264_frame_t *frame )
 {
     int i = 0;
@@ -740,6 +741,7 @@ void x264_frame_push( x264_frame_t **list, x264_frame_t *frame )
     list[i] = frame;
 }
 
+/* 从栈 list 中弹出一帧 */
 x264_frame_t *x264_frame_pop( x264_frame_t **list )
 {
     x264_frame_t *frame;
@@ -751,6 +753,7 @@ x264_frame_t *x264_frame_pop( x264_frame_t **list )
     return frame;
 }
 
+/* 将帧 frame添加到 list[0] 的位置,list中原有的帧依次往后移动一个位置 */
 void x264_frame_unshift( x264_frame_t **list, x264_frame_t *frame )
 {
     int i = 0;
@@ -760,6 +763,7 @@ void x264_frame_unshift( x264_frame_t **list, x264_frame_t *frame )
     list[0] = frame;
 }
 
+/* 弹出list[0],list中原有的帧依次往前移动一个位置 */
 x264_frame_t *x264_frame_shift( x264_frame_t **list )
 {
     x264_frame_t *frame = list[0];
@@ -778,10 +782,12 @@ void x264_frame_push_unused( x264_t *h, x264_frame_t *frame )
         x264_frame_push( h->frames.unused[frame->b_fdec], frame );
 }
 
+/* 从相应的帧列表中弹出一帧,如果列表为空,则创建一帧。
+ * b_fdec : 0 - fenc 编码帧列表; 1 - fdec重构帧列表 */
 x264_frame_t *x264_frame_pop_unused( x264_t *h, int b_fdec )
 {
     x264_frame_t *frame;
-    if( h->frames.unused[b_fdec][0] )
+    if( h->frames.unused[b_fdec][0] ) /* 如果对应的帧列表非空,则弹出一帧*/
         frame = x264_frame_pop( h->frames.unused[b_fdec] );
     else
         frame = frame_new( h, b_fdec );
