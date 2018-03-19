@@ -29,9 +29,10 @@
 #define X264_FRAME_H
 
 /* number of pixels past the edge of the frame, for motion estimation/compensation */
-#define PADH 32
-#define PADV 32
+#define PADH 32	/* 水平方向像素填充数目 */
+#define PADV 32	/* 垂直方向像素填充数目 */
 
+/* 是帧列表中帧的结构 */
 typedef struct x264_frame
 {
     /* */
@@ -49,17 +50,17 @@ typedef struct x264_frame
     int64_t i_cpb_duration;
     int64_t i_cpb_delay; /* in SPS time_scale units (i.e 2 * timebase units) */
     int64_t i_dpb_output_delay;
-    x264_param_t *param;
+    x264_param_t *param;	/* 编码器参数 */
 
     int     i_frame;     /* Presentation frame number */
     int     i_coded;     /* Coded frame number */
     int64_t i_field_cnt; /* Presentation field count */
     int     i_frame_num; /* 7.4.3 frame_num */
     int     b_kept_as_ref;
-    int     i_pic_struct;
-    int     b_keyframe;
+    int     i_pic_struct;	/* 图片结构类型,取值 pic_struct_e PIC_STRUCT_xxxx */
+    int     b_keyframe;		/* 是否是关键侦*/
     uint8_t b_fdec;
-    uint8_t b_last_minigop_bframe; /* this frame is the last b in a sequence of bframes */
+    uint8_t b_last_minigop_bframe; /* 连续B帧序列中的最后一个B帧 */
     uint8_t i_bframes;   /* number of bframes following this nonb in coded order */
     float   f_qp_avg_rc; /* QPs as decided by ratecontrol */
     float   f_qp_avg_aq; /* QPs as decided by AQ in addition to ratecontrol */
@@ -184,8 +185,8 @@ typedef struct x264_frame
 typedef struct
 {
    x264_frame_t **list;
-   int i_max_size;
-   int i_size;
+   int i_max_size;	/* 同步帧列表中最大帧数 */
+   int i_size;		/* 同步帧列表中帧的数目 */
    x264_pthread_mutex_t     mutex;
    x264_pthread_cond_t      cv_fill;  /* event signaling that the list became fuller */
    x264_pthread_cond_t      cv_empty; /* event signaling that the list became emptier */

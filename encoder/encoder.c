@@ -2181,26 +2181,28 @@ static inline int reference_distance( x264_t *h, x264_frame_t *frame )
         return abs(h->fenc->i_frame - frame->i_frame);
 }
 
+/* 创建前向、后向参考帧列表 */
 static inline void reference_build_list( x264_t *h, int i_poc )
 {
     int b_ok;
 
     /* build ref list 0/1 */
-    h->mb.pic.i_fref[0] = h->i_ref[0] = 0;
-    h->mb.pic.i_fref[1] = h->i_ref[1] = 0;
-    if( h->sh.i_type == SLICE_TYPE_I )
+    h->mb.pic.i_fref[0] = h->i_ref[0] = 0; /* 前向参考帧索引 */
+    h->mb.pic.i_fref[1] = h->i_ref[1] = 0; /* 后向参考帧索引 */
+    if( h->sh.i_type == SLICE_TYPE_I )	/* 如果是I帧,不需要参考帧,直接返回 */
         return;
 
-    for( int i = 0; h->frames.reference[i]; i++ )
+    for( int i = 0; h->frames.reference[i]; i++ )	/* 注意这里都是指针操作 */
     {
-        if( h->frames.reference[i]->b_corrupt )
+        if( h->frames.reference[i]->b_corrupt )	/* 如果当前参考帧是坏的,则继续下一帧 */
             continue;
-        if( h->frames.reference[i]->i_poc < i_poc )
+        if( h->frames.reference[i]->i_poc < i_poc )	/* 小于当前帧POC的,放到前向参考帧列表中 */
             h->fref[0][h->i_ref[0]++] = h->frames.reference[i];
         else if( h->frames.reference[i]->i_poc > i_poc )
-            h->fref[1][h->i_ref[1]++] = h->frames.reference[i];
+            h->fref[1][h->i_ref[1]++] = h->frames.reference[i];	/* 大于当前帧POC的,放到后向参考帧列表中*/
     }
 
+	/* h->fref[0] 按照poc从高到低进行排序,h->fref[1] 按照poc从低到高进行排序,算法为冒泡排序 */
     if( h->sh.i_mmco_remove_from_end )
     {
         /* Order ref0 for MMCO remove */
@@ -2419,8 +2421,10 @@ static void fdec_filter_row( x264_t *h, int mb_y, int pass )
     }
 }
 
+/* 更新参考帧列表 */
 static inline int reference_update( x264_t *h )
 {
+	/* 如果重建帧不作为参考帧（不作为参考帧，当然不用加入参考帧队列了）*/
     if( !h->fdec->b_kept_as_ref )
     {
         if( h->i_thread_frames > 1 )
@@ -2440,15 +2444,19 @@ static inline int reference_update( x264_t *h )
                 x264_frame_push_unused( h, x264_frame_shift( &h->frames.reference[j] ) );
 
     /* move frame in the buffer */
-    x264_frame_push( h->frames.reference, h->fdec );
-    if( h->frames.reference[h->sps->i_num_ref_frames] )
-        x264_frame_push_unused( h, x264_frame_shift( h->frames.reference ) );
-    h->fdec = x264_frame_pop_unused( h, 1 );
+    x264_frame_push( h->frames.reference, h->fdec );	/* 把重建帧放入参考队列中 */
+    if( h->frames.reference[h->sps->i_num_ref_frames] )	/* 如果参考帧的数目已经达到sps中指定的最大参考帧数 */
+		// 取出参考队列中第一个参考重建帧，并放入暂时不用帧队列中
+        x264_frame_push_unused( h, x264_frame_shift( h->frames.reference ) ); 
+
+	// 从暂时不用帧队列中,取出一帧作为新的重建帧
+    h->fdec = x264_frame_pop_unused( h, 1 ); 
     if( !h->fdec )
         return -1;
     return 0;
 }
 
+/* 重置参考帧列表,也就是将参考帧列表中的帧移动到unused列表中 */
 static inline void reference_reset( x264_t *h )
 {
     while( h->frames.reference[0] )
