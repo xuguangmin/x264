@@ -39,6 +39,7 @@
 #include "common/common.h"
 #include "analyse.h"
 
+/* 将src列表中最左边的count个帧移动到dst列表中,src和dst的相应帧数目作修改 */
 static void lookahead_shift( x264_sync_frame_list_t *dst, x264_sync_frame_list_t *src, int count )
 {
     int i = count;
@@ -49,13 +50,14 @@ static void lookahead_shift( x264_sync_frame_list_t *dst, x264_sync_frame_list_t
         dst->list[ dst->i_size++ ] = x264_frame_shift( src->list );
         src->i_size--;
     }
-    if( count )
+    if( count )	/* 如果count值非零就表示dst已经满了,或者src空了 */
     {
         x264_pthread_cond_broadcast( &dst->cv_fill );
         x264_pthread_cond_broadcast( &src->cv_empty );
     }
 }
 
+/* 更新最后一个非B帧 */
 static void lookahead_update_last_nonb( x264_t *h, x264_frame_t *new_nonb )
 {
     if( h->lookahead->last_nonb )
@@ -183,6 +185,7 @@ void x264_lookahead_delete( x264_t *h )
     x264_free( h->lookahead );
 }
 
+/* 将帧frame添加到h->lookahead->next->list中 */
 void x264_lookahead_put_frame( x264_t *h, x264_frame_t *frame )
 {
     if( h->param.i_sync_lookahead )
