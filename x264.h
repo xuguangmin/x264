@@ -66,6 +66,7 @@ typedef struct x264_t x264_t;
  * NAL structure and functions
  ****************************************************************************/
 
+/* Nal的类型 */
 enum nal_unit_type_e
 {
     NAL_UNKNOWN     = 0,
@@ -81,6 +82,7 @@ enum nal_unit_type_e
     NAL_FILLER      = 12,
     /* ref_idc == 0 for 6,9,10,11,12 */
 };
+/* Nal的优先级 */
 enum nal_priority_e
 {
     NAL_PRIORITY_DISPOSABLE = 0,
@@ -93,20 +95,24 @@ enum nal_priority_e
  * are merely in the struct for easy access by the calling application.
  * All data returned in an x264_nal_t, including the data in p_payload, is no longer
  * valid after the next call to x264_encoder_encode.  Thus it must be used or copied
- * before calling x264_encoder_encode or x264_encoder_headers again. */
+ * before calling x264_encoder_encode or x264_encoder_headers again. 
+ *
+ * x264_nal_t中的数据在下一次调用x264_encoder_encode之后就无效了，因此必须在调用
+ * x264_encoder_encode 或 x264_encoder_headers 之前使用或拷贝其中的数据。*/
 typedef struct x264_nal_t
 {
-    int i_ref_idc;  /* nal_priority_e */
-    int i_type;     /* nal_unit_type_e */
-    int b_long_startcode;
+    int i_ref_idc;  /* Nal的优先级 nal_priority_e */
+    int i_type;     /* Nal的类型 nal_unit_type_e */
+    int b_long_startcode; /* 是否采用长前缀码0x00000001 */
     int i_first_mb; /* If this NAL is a slice, the index of the first MB in the slice. */
     int i_last_mb;  /* If this NAL is a slice, the index of the last MB in the slice. */
 
-    /* Size of payload (including any padding) in bytes. */
+    /* payload 的字节大小(including any padding) */
     int     i_payload;
     /* If param->b_annexb is set, Annex-B bytestream with startcode.
      * Otherwise, startcode is replaced with a 4-byte size.
-     * This size is the size used in mp4/similar muxing; it is equal to i_payload-4 */
+     * This size is the size used in mp4/similar muxing; it is equal to i_payload-4 
+	 * 存放编码后的数据,已经封装成Nal单元 */
     uint8_t *p_payload;
 
     /* Size of padding in bytes. */
@@ -276,7 +282,6 @@ typedef struct x264_zone_t
     float f_bitrate_factor;
     struct x264_param_t *param;
 } x264_zone_t;
-
 typedef struct x264_param_t
 {
     /* CPU flags */
@@ -727,12 +732,15 @@ typedef struct x264_sei_t
     void (*sei_free)( void* );
 } x264_sei_t;
 
+/*
+ * 存放一帧图像实际像素数据 */
 typedef struct x264_image_t
 {
-    int     i_csp;       /* Colorspace */
-    int     i_plane;     /* Number of image planes */
-    int     i_stride[4]; /* Strides for each plane */
-    uint8_t *plane[4];   /* Pointers to each plane */
+    int     i_csp;       /* 设置彩色空间,通常取值 X264_CSP_I420 */
+    int     i_plane;     /* 图像平面个数,例如彩色空间是YUV420格式的,此处取值3 */
+    int     i_stride[4]; /* 每个图像平面的跨度,也就是每一行数据的字节数 */
+    uint8_t *plane[4];   /* 每个图像平面存放数据的起始地址, plane[0]是Y平面,
+							plane[1]和plane[2]分别代表U和V平面 */
 } x264_image_t;
 
 typedef struct x264_image_properties_t
@@ -791,21 +799,28 @@ typedef struct x264_image_properties_t
     double f_crf_avg;
 } x264_image_properties_t;
 
+/* 描述一视频侦的特征 */
 typedef struct x264_picture_t
 {
     /* In: force picture type (if not auto)
      *     If x264 encoding parameters are violated in the forcing of picture types,
      *     x264 will correct the input picture type and log a warning.
-     * Out: type of the picture encoded */
+     * Out: type of the picture encoded 
+     * i_type: 帧的类型，取值有X264_TYPE_KEYFRAME、X264_TYPE_P、X264_TYPE_AUTO等。初始化为auto，
+     *         则在编码过程自行控制 */
     int     i_type;
-    /* In: force quantizer for != X264_QP_AUTO */
+    /* In: force quantizer for != X264_QP_AUTO 
+     * 此参数减1代表当前帧的量化参数值 */
     int     i_qpplus1;
     /* In: pic_struct, for pulldown/doubling/etc...used only if b_pic_struct=1.
      *     use pic_struct_e for pic_struct inputs
-     * Out: pic_struct element associated with frame */
+     * Out: pic_struct element associated with frame 
+     * 帧的结构类型，表示是帧还是场，是逐行还是隔行，取值为枚举值 pic_struct_e，
+     * 定义在x264.h中*/
     int     i_pic_struct;
     /* Out: whether this frame is a keyframe.  Important when using modes that result in
-     * SEI recovery points being used instead of IDR frames. */
+     * SEI recovery points being used instead of IDR frames. 
+     * 输出：是否是关键帧 */
     int     b_keyframe;
     /* In: user pts, Out: pts of encoded picture (user)*/
     int64_t i_pts;
@@ -822,16 +837,17 @@ typedef struct x264_picture_t
     /* In: raw image data */
     /* Out: reconstructed image data.  x264 may skip part of the reconstruction process,
             e.g. deblocking, in frames where it isn't necessary.  To force complete
-            reconstruction, at a small speed cost, set b_full_recon. */
+            reconstruction, at a small speed cost, set b_full_recon. 
+     * 存放一帧图像的真实数据 */
     x264_image_t img;
     /* In: optional information to modify encoder decisions for this frame
      * Out: information about the encoded frame */
     x264_image_properties_t prop;
-    /* Out: HRD timing information. Output only when i_nal_hrd is set. */
+    /* 输出：HRD时间信息，仅当i_nal_hrd设置了才有效 */
     x264_hrd_t hrd_timing;
     /* In: arbitrary user SEI (e.g subtitles, AFDs) */
     x264_sei_t extra_sei;
-    /* private user data. copied from input to output frames. */
+    /*  私有数据存放区，将输入数据拷贝到输出帧中 */
     void *opaque;
 } x264_picture_t;
 
