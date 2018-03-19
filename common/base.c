@@ -272,6 +272,7 @@ void x264_picture_clean( x264_picture_t *pic )
 
 /****************************************************************************
  * x264_param_default:
+ * 设置编码器的默认参数值
  ****************************************************************************/
 void x264_param_default( x264_param_t *param )
 {
@@ -416,6 +417,7 @@ void x264_param_default( x264_param_t *param )
     param->psz_clbin_file = NULL;
 }
 
+/* 根据给定的preset设置编码器的部分参数值 */
 static int param_apply_preset( x264_param_t *param, const char *preset )
 {
     char *end;
@@ -537,6 +539,7 @@ static int param_apply_preset( x264_param_t *param, const char *preset )
     return 0;
 }
 
+/* 根据给定的tune设置编码器的部分参数值 */
 static int param_apply_tune( x264_param_t *param, const char *tune )
 {
     char *tmp = x264_malloc( strlen( tune ) + 1 );
@@ -643,17 +646,22 @@ static int param_apply_tune( x264_param_t *param, const char *tune )
     return 0;
 }
 
+/* 根据给定的preset和tune,设置编码器参数值 */
 int x264_param_default_preset( x264_param_t *param, const char *preset, const char *tune )
 {
-    x264_param_default( param );
+    x264_param_default( param );	/* 首先设置编码器的默认参数值 */
 
-    if( preset && param_apply_preset( param, preset ) < 0 )
+	/* 根据设定的preset,修改部分编码器参数值 */
+    if( preset && param_apply_preset( param, preset ) < 0 )	
         return -1;
+	/* 根据设定的tune,修改部分编码器参数值 */
     if( tune && param_apply_tune( param, tune ) < 0 )
         return -1;
     return 0;
 }
 
+/* 如果设置了first-pass模式(rc.b_stat_read == 0, rc.b_stat_write == 1),
+ * 则关闭掉一些在一遍编码过程中用处不大的编码器参数 */
 void x264_param_apply_fastfirstpass( x264_param_t *param )
 {
     /* Set faster options in case of turbo firstpass. */
@@ -686,6 +694,7 @@ static int profile_string_to_int( const char *str )
     return -1;
 }
 
+/* 检测设置的profile与其他的编码器参数是否有冲突,因此不能保证给定的profile一定有效 */
 int x264_param_apply_profile( x264_param_t *param, const char *profile )
 {
     if( !profile )
@@ -809,6 +818,7 @@ static double atof_internal( const char *str, int *b_error )
 #define atoi(str) atoi_internal( str, &b_error )
 #define atof(str) atof_internal( str, &b_error )
 
+/* 根据名字“name”及值“value”来设置编码器p中的相应参数值 */
 int x264_param_parse( x264_param_t *p, const char *name, const char *value )
 {
     char *name_buf = NULL;
