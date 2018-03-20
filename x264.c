@@ -148,11 +148,18 @@ static void sigint_handler( int a )
     b_ctrl_c = 1;
 }
 
+/* 记录一些与编码关系较小的设置信息,其变量可通过读取main()的参数获得 */
 typedef struct {
-    int b_progress;
-    int i_seek;
-    hnd_t hin;
-    hnd_t hout;
+    int b_progress;	/* bool类型的变量,用来控制是否显示编码进度.取值为0或1 */
+
+	/* 整数类型 表示开始从哪一帧开始编码,因为不一定从文件的第一帧开始编码，
+	 * 这是可以控制的 */
+    int i_seek;		
+    hnd_t hin;		/* 指向输入yuv文件的指针 */
+    hnd_t hout;		/* 指向编码过后生成的文件的指针 */
+
+	/* 一个指向文件类型的指针，它是文本文件，其每一行的格式是 ：framenum frametye  
+	 * QP用于强制指定某些帧或者全部帧的帧类型和QP(quant param量化参数)的值. */
     FILE *qpfile;
     FILE *tcfile_out;
     double timebase_convert_multiplier;
