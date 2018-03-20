@@ -25,6 +25,17 @@
  * For more information, contact us at licensing@x264.com.
  *****************************************************************************/
 
+// 亮度分量(Luma)
+// 色度分量(Chroma)
+// 环路滤波(Loop Filter)
+// 色度(Chroma)
+// 帧切换/切换片(包括SP和SI)
+// Slice 条带
+/* H.264/AVC定义了4种不同的Profile(类):Baseline Profile(基类)、Main
+ * Profile(主类)、Extended Profile(扩展类)和High Profile(高端类) */
+// 运动补偿(MC)
+// 直流:分量DC,平面Plane
+
 #ifndef X264_X264_H
 #define X264_X264_H
 
@@ -97,6 +108,8 @@ enum nal_priority_e
  * valid after the next call to x264_encoder_encode.  Thus it must be used or copied
  * before calling x264_encoder_encode or x264_encoder_headers again. 
  *
+ * 网络适配层（NAL,Network Abstraction Layer):是H.264为适应网络传输应用而制
+ * 		定的一层数据打包操作。
  * x264_nal_t中的数据在下一次调用x264_encoder_encode之后就无效了，因此必须在调用
  * x264_encoder_encode 或 x264_encoder_headers 之前使用或拷贝其中的数据。*/
 typedef struct x264_nal_t
@@ -107,13 +120,13 @@ typedef struct x264_nal_t
     int i_first_mb; /* If this NAL is a slice, the index of the first MB in the slice. */
     int i_last_mb;  /* If this NAL is a slice, the index of the last MB in the slice. */
 
-    /* payload 的字节大小(including any padding) */
-    int     i_payload;
+    /* (including any padding) */
+    int     i_payload;	/* 该nal单元包含的字节数 */
     /* If param->b_annexb is set, Annex-B bytestream with startcode.
      * Otherwise, startcode is replaced with a 4-byte size.
      * This size is the size used in mp4/similar muxing; it is equal to i_payload-4 
 	 * 存放编码后的数据,已经封装成Nal单元 */
-    uint8_t *p_payload;
+    uint8_t *p_payload;	//该NAL单元存储数据的开始地
 
     /* Size of padding in bytes. */
     int i_padding;
@@ -188,9 +201,9 @@ typedef struct x264_nal_t
 #define X264_CQM_FLAT                0
 #define X264_CQM_JVT                 1
 #define X264_CQM_CUSTOM              2
-#define X264_RC_CQP                  0
-#define X264_RC_CRF                  1
-#define X264_RC_ABR                  2
+#define X264_RC_CQP                  0	/* 恒定质量 */
+#define X264_RC_CRF                  1	/* 恒定码率 */
+#define X264_RC_ABR                  2	/* 平均码率 */
 #define X264_QP_AUTO                 0
 #define X264_AQ_NONE                 0
 #define X264_AQ_VARIANCE             1
@@ -222,7 +235,7 @@ static const char * const x264_colmatrix_names[] = { "GBR", "bt709", "undef", ""
                                                      "smpte2085", "chroma-derived-nc", "chroma-derived-c", "ICtCp", 0 };
 static const char * const x264_nal_hrd_names[] = { "none", "vbr", "cbr", 0 };
 
-/* Colorspace type */
+/* 色彩空间类型 */
 #define X264_CSP_MASK           0x00ff  /* */
 #define X264_CSP_NONE           0x0000  /* Invalid mode     */
 #define X264_CSP_I420           0x0001  /* yuv 4:2:0 planar */
@@ -284,22 +297,21 @@ typedef struct x264_zone_t
 } x264_zone_t;
 typedef struct x264_param_t
 {
-    /* CPU flags */
-    unsigned int cpu;
-    int         i_threads;           /* encode multiple frames in parallel */
+    unsigned int cpu;	 // CPU 标志位
+    int         i_threads;	 // 并行编码多帧; 线程数，为0则自动多线程编码
     int         i_lookahead_threads; /* multiple threads for lookahead analysis */
-    int         b_sliced_threads;  /* Whether to use slice-based threading. */
-    int         b_deterministic; /* whether to allow non-deterministic optimizations when threaded */
-    int         b_cpu_independent; /* force canonical behavior rather than cpu-dependent optimal algorithms */
-    int         i_sync_lookahead; /* threaded lookahead buffer */
+    int         b_sliced_threads;  // 如果为false,则一个slice只编码成一个NALU;否则有几个线程,编码成几个NALU,缺省为true */
+    int         b_deterministic; /* 是否允许线程进行非确定性优化 */
+    int         b_cpu_independent; // 强制采用典型行为，而不是采用独立于cpu的优化算法
+    int         i_sync_lookahead; // 线程超前缓存帧数
 
     /* Video Properties */
-    int         i_width;
+    int         i_width;	// 编码图像大小
     int         i_height;
-    int         i_csp;         /* CSP of encoded bitstream */
+    int         i_csp;      // 编码比特流的CSP,仅支持i420,色彩空间设置
     int         i_bitdepth;
     int         i_level_idc;
-    int         i_frame_total; /* number of frames to encode if known, else 0 */
+    int         i_frame_total; /* 编码帧的总数if known, 默认0 */
 
     /* NAL HRD
      * Uses Buffering and Picture Timing SEIs to signal HRD
@@ -309,6 +321,7 @@ typedef struct x264_param_t
      * will currently generate invalid HRD. */
     int         i_nal_hrd;
 
+	/* vui参数集: 视频可用性信息、视频标准化选项 */
     struct
     {
         /* they will be reduced to be 0 < x <= 65535 and prime */
@@ -686,6 +699,7 @@ int     x264_param_apply_profile( x264_param_t *, const char *profile );
  *      there are no restrictions. */
 X264_API extern const int x264_chroma_format;
 
+/* 帧的结构类型,表示是帧还是场,是逐行还是隔行,取值为枚举值 pic_struct_e */
 enum pic_struct_e
 {
     PIC_STRUCT_AUTO              = 0, // automatically decide (default)
@@ -736,7 +750,7 @@ typedef struct x264_sei_t
  * 存放一帧图像实际像素数据 */
 typedef struct x264_image_t
 {
-    int     i_csp;       /* 设置彩色空间,通常取值 X264_CSP_I420 */
+    int     i_csp;       /* 设置色彩空间,通常取值 X264_CSP_I420 */
     int     i_plane;     /* 图像平面个数,例如彩色空间是YUV420格式的,此处取值3 */
     int     i_stride[4]; /* 每个图像平面的跨度,也就是每一行数据的字节数 */
     uint8_t *plane[4];   /* 每个图像平面存放数据的起始地址, plane[0]是Y平面,
