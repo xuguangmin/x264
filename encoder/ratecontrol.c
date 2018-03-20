@@ -7,7 +7,7 @@
  *          Michael Niedermayer <michaelni@gmx.at>
  *          Gabriel Bouvigne <gabriel.bouvigne@joost.com>
  *          Fiona Glaser <fiona@x264.com>
- *          M�ns Rullg�rd <mru@mru.ath.cx>
+ *          Måns Rullgård <mru@mru.ath.cx>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1457,6 +1457,7 @@ void x264_ratecontrol_start( x264_t *h, int i_force_qp, int overhead )
 
         int mincr = l->mincr;
 
+		//蓝光碟压缩，最小压缩比为4
         if( h->param.b_bluray_compat )
             mincr = 4;
 
@@ -1484,6 +1485,7 @@ void x264_ratecontrol_start( x264_t *h, int i_force_qp, int overhead )
     if( h->sh.i_type != SLICE_TYPE_B )
         rc->bframes = h->fenc->i_bframes;
 
+	//根据不同码率控制方式计算qp值
     if( rc->b_abr )
     {
         q = qscale2qp( rate_estimate_qscale( h ) );
@@ -1523,6 +1525,7 @@ void x264_ratecontrol_start( x264_t *h, int i_force_qp, int overhead )
 
     accum_p_qp_update( h, rc->qpm );
 
+	// 记录最后一个非B帧的类型
     if( h->sh.i_type != SLICE_TYPE_B )
         rc->last_non_b_pict_type = h->sh.i_type;
 }
