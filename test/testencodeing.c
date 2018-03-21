@@ -5,36 +5,31 @@
 #include <fcntl.h>  
 #include <stdlib.h>  
 #include <string.h> 
+#include <unistd.h>
 
 #include "x264.h" 
-#define IMAGE_WIDTH   320  
-#define IMAGE_HEIGHT  240  
+#define IMAGE_WIDTH   352  
+#define IMAGE_HEIGHT  288  
 #define CLEAR(x) (memset((&x),0,sizeof(x)))  
 
-char *read_filename="yuv420p.yuv";  
+char *read_filename="BUS_352x288_30_orig_01.yuv";  
 char *write_filename="x264yuv420p2.h264"; 
 
 int  main(int argc ,char **argv){
 
 	x264_param_t m_param;
-
 	x264_param_default(&m_param);
-
-	m_param.i_width = 320;
-	m_param.i_height = 240;
-
-	m_param.i_fps_num = 4;
+    m_param.i_bitdepth = 24;
+	m_param.i_width = IMAGE_WIDTH;
+	m_param.i_height = IMAGE_HEIGHT;
+	m_param.i_csp = X264_CSP_I420;
+	m_param.i_fps_num = 0;
 	m_param.i_fps_den = 1;
-
 	m_param.rc.i_bitrate = 96;
 	m_param.rc.i_rc_method = X264_RC_ABR;
-
-	//m_param.i_frame_reference = 4; /* 参考帧的最大帧数 */
-
+	m_param.i_frame_reference = 4; /* 参考帧的最大帧数 */
 	m_param.b_annexb = 1;
-
 	m_param.i_keyint_max = 2;
-
 	x264_t* m_h = NULL;
 
 	 /* 根据输入参数param初始化总结构 x264_t */
@@ -62,7 +57,7 @@ int  main(int argc ,char **argv){
 	   int fd_read,fd_write; 
 
 	   if((fd_read=open(read_filename,O_RDONLY))<0){  
-		   printf("cannot open input file!\n");  
+		   printf("cannot open input file! : %s\n", read_filename);  
 		   exit(EXIT_FAILURE);  
 	   }  
 
@@ -81,7 +76,6 @@ int  main(int argc ,char **argv){
 	   CLEAR(nal);  
 
 	   while(read(fd_read,yuv,IMAGE_WIDTH*IMAGE_HEIGHT*3/2)>0){  
-		   
 		   m_pic.i_pts++;  
 
 		   if((ret=x264_encoder_encode(m_h,&nal,&n_nal,&m_pic,&pic_out))<0){  
@@ -98,8 +92,6 @@ int  main(int argc ,char **argv){
 	   }  
 
 	   free(yuv);  
-	   free(&m_pic);  
-	   free(&m_param);  
 	   x264_encoder_close(m_h);   
 	   close(fd_read);  
 	   close(fd_write); 
