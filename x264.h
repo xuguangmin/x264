@@ -35,6 +35,7 @@
  * Profile(主类)、Extended Profile(扩展类)和High Profile(高端类) */
 // 运动补偿(MC)
 // 直流:分量DC,平面Plane
+// Bandicam FPS 帧率模式 VFR（可变帧率） 和 CFR （恒定帧率）
 
 #ifndef X264_X264_H
 #define X264_X264_H
@@ -583,7 +584,6 @@ void x264_nal_encode( x264_t *h, uint8_t *dst, x264_nal_t *nal );
 /****************************************************************************
  * H.264 level restriction information
  ****************************************************************************/
-
 typedef struct x264_level_t
 {
     uint8_t  level_idc;
@@ -702,11 +702,11 @@ X264_API extern const int x264_chroma_format;
 /* 帧的结构类型,表示是帧还是场,是逐行还是隔行,取值为枚举值 pic_struct_e */
 enum pic_struct_e
 {
-    PIC_STRUCT_AUTO              = 0, // automatically decide (default)
+    PIC_STRUCT_AUTO              = 0, // 自动决定(default)
     PIC_STRUCT_PROGRESSIVE       = 1, // progressive frame
     // "TOP" and "BOTTOM" are not supported in x264 (PAFF only)
-    PIC_STRUCT_TOP_BOTTOM        = 4, // top field followed by bottom
-    PIC_STRUCT_BOTTOM_TOP        = 5, // bottom field followed by top
+    PIC_STRUCT_TOP_BOTTOM        = 4, // 前场然后底场
+    PIC_STRUCT_BOTTOM_TOP        = 5, // 底场然后前场
     PIC_STRUCT_TOP_BOTTOM_TOP    = 6, // top field, bottom field, top field repeated
     PIC_STRUCT_BOTTOM_TOP_BOTTOM = 7, // bottom field, top field, bottom field repeated
     PIC_STRUCT_DOUBLE            = 8, // double frame

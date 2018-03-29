@@ -1912,7 +1912,7 @@ static int encode( x264_param_t *param, cli_opt_t *opt )
     /* set up pulldown */
     if( opt->i_pulldown && !param->b_vfr_input )
     {
-        param->b_pulldown = 1;
+        param->b_pulldown = 1;//明确设置CFR基准时间
         param->b_pic_struct = 1;
         pulldown = &pulldown_values[opt->i_pulldown];
         param->i_timebase_num = param->i_fps_den;

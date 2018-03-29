@@ -11,7 +11,8 @@ vpath %.rc $(SRCPATH)
 GENERATED =
 
 all: default
-default:
+default: example checkasm x264
+	sh test.sh
 
 SRCS = common/osdep.c common/base.c common/cpu.c common/tables.c \
        encoder/api.c

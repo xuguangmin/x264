@@ -124,7 +124,7 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
 
     sps->b_constraint_set0  = sps->i_profile_idc == PROFILE_BASELINE;
     /* x264 doesn't support the features that are in Baseline and not in Main,
-     * namely arbitrary_slice_order and slice_groups. */
+     * 即任意条带顺序和条带组 */
     sps->b_constraint_set1  = sps->i_profile_idc <= PROFILE_MAIN;
     /* Never set constraint_set2, it is not necessary and not used in real world. */
     sps->b_constraint_set2  = 0;
